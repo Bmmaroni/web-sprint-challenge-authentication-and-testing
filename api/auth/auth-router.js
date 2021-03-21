@@ -3,13 +3,12 @@ const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
 const Model = require("./auth-model")
 const uniqueUsername  = require("../middleware/uniqueUsername")
-const validateCredentials = require("../middleware/validateCredentials")
 
-router.post('/register', async (req, res, next) => {
+router.post('/register', uniqueUsername, async (req, res, next) => {
 	try {
 		const { username, password } = req.body
 
-		if(!username || !password){
+		if(!req.body.username || !req.body.password){
 			return res.status(400).json({
 				message: "username and password required"
 			})
@@ -49,36 +48,34 @@ router.post('/register', async (req, res, next) => {
   */
 });
 
-router.post('/login', validateCredentials, async (req, res, next) => {
-  res.end('implement login, please!');
-
+router.post('/login', async (req, res, next) => {
 	try{
 		const { username, password } = req.body
+		const user = await Model.findBy({ username }).first()
+		const checkPassword = await bcrypt.compare(password, user ? user.password : "")
 
 		if (!username || !password){
 			return res.status(400).json({
 				message: "username and password required"
 			})
-		}
-
-		const user = await Model.findBy(username)
-
-		const checkPassword = await bcrypt.compare(password, user ? user.password : "")
-
-		if(!user || !checkPassword){
+		} else if (!user || !checkPassword){
 			return res.status(401).json({
 				message: "invalid credentials"
 			})
-		}
-		res.status(200).json({
-			message: `welcome, ${username}`,
-			token: token
-		})
+		} else {
+			const token = jwt.sign({
+				subject: user.id,
+				username: user.username,
+			}, "keep it secret keep it safe", {expiresIn: "1d"})
 
-		const token = jwt.sign({
-			subject: user.id,
-			username: user.username,
-		}, "keep it secret keep it safe", {expiresIn: "1d"})
+			res.cookie("token", token)
+
+			res.status(200).json({
+				message: `welcome, ${username}`,
+				token: token
+			})
+		}
+
 
 	} catch(err){
 		next(err)

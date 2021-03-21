@@ -13,7 +13,7 @@ const jwt = require("jsonwebtoken")
   */
 const restricted = async (req, res, next) => {
 	try {
-		const token = req.header.authorization
+		const token = req.cookies.token
 		if (!token){
 			res.status(401).json({
 				message: "token required"
@@ -22,7 +22,7 @@ const restricted = async (req, res, next) => {
 
 		jwt.verify(token, "keep it secret keep it safe", (err, decoded) => {
 			if (err){
-				json.status(401).json({
+				res.status(401).json({
 					message: "token invalid"
 				})
 			}
