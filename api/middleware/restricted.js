@@ -11,7 +11,7 @@ const jwt = require("jsonwebtoken")
     3- On invalid or expired token in the Authorization header,
       the response body should include a string exactly as follows: "token invalid".
   */
-async function restricted(req, res, next) {
+const restricted = async (req, res, next) => {
 	try {
 		const token = req.header.authorization
 		if (!token){
@@ -35,6 +35,4 @@ async function restricted(req, res, next) {
 	}
 }
 
-module.exports = {
-	restricted
-}
+module.exports = restricted
