@@ -2,11 +2,10 @@ const router = require('express').Router();
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
 const Model = require("./auth-model")
-const uniqueUsername = require("../middleware/uniqueUsername")
+const uniqueUsername  = require("../middleware/uniqueUsername")
 const validateCredentials = require("../middleware/validateCredentials")
 
-router.post('/register', uniqueUsername, async (req, res, next) => {
-  res.end('implement register, please!');
+router.post('/register', async (req, res, next) => {
 	try {
 		const { username, password } = req.body
 
@@ -16,7 +15,7 @@ router.post('/register', uniqueUsername, async (req, res, next) => {
 			})
 		} else {
 			const newUser = await Model.add({
-				username,
+				username: username,
 				password: await bcrypt.hash(password, 5)
 			})
 			return res.status(201).json(newUser)
