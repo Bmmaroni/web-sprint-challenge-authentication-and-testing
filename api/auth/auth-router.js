@@ -1,17 +1,26 @@
 const router = require('express').Router();
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
-const db = require("../../data/dbConfig")
+const Model = require("./auth-model")
+const uniqueUsername = require("../middleware/uniqueUsername")
+const validateCredentials = require("../middleware/validateCredentials")
 
-router.post('/register', async (req, res, next) => {
+router.post('/register', uniqueUsername, async (req, res, next) => {
   res.end('implement register, please!');
 	try {
 		const { username, password } = req.body
-		const newUser = await db("users").insert({
-			username,
-			password: await bcrypt.hash(password, 5)
-		})
-		res.status(201).json(newUser)
+
+		if(!username || !password){
+			return res.status(400).json({
+				message: "username and password required"
+			})
+		} else {
+			const newUser = await Model.add({
+				username,
+				password: await bcrypt.hash(password, 5)
+			})
+			return res.status(201).json(newUser)
+		}
 	} catch(err) {
 		next(err)
 	}
@@ -41,8 +50,40 @@ router.post('/register', async (req, res, next) => {
   */
 });
 
-router.post('/login', (req, res, next) => {
+router.post('/login', validateCredentials, async (req, res, next) => {
   res.end('implement login, please!');
+
+	try{
+		const { username, password } = req.body
+
+		if (!username || !password){
+			return res.status(400).json({
+				message: "username and password required"
+			})
+		}
+
+		const user = await Model.findBy(username)
+
+		const checkPassword = await bcrypt.compare(password, user ? user.password : "")
+
+		if(!user || !checkPassword){
+			return res.status(401).json({
+				message: "invalid credentials"
+			})
+		}
+		res.status(200).json({
+			message: `welcome, ${username}`,
+			token: token
+		})
+
+		const token = jwt.sign({
+			subject: user.id,
+			username: user.username,
+		}, "keep it secret keep it safe", {expiresIn: "1d"})
+
+	} catch(err){
+		next(err)
+	}
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
