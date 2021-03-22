@@ -51,14 +51,15 @@ router.post('/register', uniqueUsername, async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
 	try{
 		const { username, password } = req.body
-		const user = await Model.findBy({ username }).first()
-		const checkPassword = await bcrypt.compare(password, user ? user.password : "")
-
 		if (!username || !password){
 			return res.status(400).json({
 				message: "username and password required"
 			})
-		} else if (!user || !checkPassword){
+		}
+		const user = await Model.findBy({ username }).first()
+		const checkPassword = await bcrypt.compare(password, user ? user.password : "")
+
+		if (!user || !checkPassword){
 			return res.status(401).json({
 				message: "invalid credentials"
 			})
